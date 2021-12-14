@@ -1,6 +1,5 @@
 from collections import deque
 import os
-import random
 
 import numpy as np
 import torch
@@ -10,15 +9,15 @@ import wandb
 
 from dataset import Dataset
 
-def train(model, train_dataset, test_dataset, **params):
+def train(model, train_dataset, test_dataset, args):
     dataloader = DataLoader(train_dataset,
-                            batch_size=params['batch_size'],
+                            batch_size=args.classifier_training_batch_size,
                             num_workers=4,
                             drop_last=True,
                             sampler=RandomSampler(train_dataset))
     
     optimizer = AdamW(model.parameters(),
-                      lr=params['lr'],
+                      lr=args.classifier_training_lr,
                       eps=1e-8)
 
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -28,7 +27,7 @@ def train(model, train_dataset, test_dataset, **params):
     running_eval = deque([float('Inf')]*running_eval_len, maxlen=running_eval_len)
     stop = False
 
-    for epoch in range(1, params['epochs'] + 1):
+    for epoch in range(1, args.classifier_training_epochs + 1):
         print(f'Starting Epoch {epoch}')
         total_train_loss = 0
 
@@ -54,7 +53,7 @@ def train(model, train_dataset, test_dataset, **params):
             if step % 50 == 0:
                 prev_avg_eval_loss = sum(running_eval) / len(running_eval)
                 print(f'Epoch: {epoch}\tStep: {step} \tLoss: {loss:.3f}')
-                eval_metrics = eval(model, test_dataset, eval_samples=300, **params)
+                eval_metrics = eval(model, test_dataset, args, eval_samples=300)
                 print(eval_metrics)
                 running_eval.append(eval_metrics['Eval Loss'])
                 avg_eval_loss = sum(running_eval) / len(running_eval)
@@ -63,20 +62,20 @@ def train(model, train_dataset, test_dataset, **params):
 
             if stop:
                 print(stop)
-                eval_metrics = eval(model, test_dataset, **params)
+                eval_metrics = eval(model, test_dataset, args)
                 print(eval_metrics)
                 return model
 
         avg_train_loss = total_train_loss / len(dataloader)
         print(f'Epoch {epoch}\t\tAvg Training Loss: {avg_train_loss:.3f}')
-        eval_metrics = eval(model, test_dataset, **params)
+        eval_metrics = eval(model, test_dataset, args)
         print(eval_metrics)
     return model
 
-def eval(model, test_dataset, eval_samples=None, **params):
+def eval(model, test_dataset, args, eval_samples=None):
     sampler = RandomSampler if eval_samples is not None else SequentialSampler
     dataloader = DataLoader(test_dataset,
-                            batch_size=params['batch_size'],
+                            batch_size=args.classifier_training_batch_size,
                             num_workers=4,
                             drop_last=True,
                             sampler=sampler(test_dataset))
@@ -103,7 +102,7 @@ def eval(model, test_dataset, eval_samples=None, **params):
         predicted = np.argmax(logits, axis=1).flatten()
         accuracy = np.sum(predicted == labels) / len(labels)
         accuracies.append(accuracy)
-        if (step + 1) * params['batch_size'] > eval_samples:
+        if (step + 1) * args.classifier_training_batch_size > eval_samples:
             break
 
     avg_eval_loss = total_eval_loss / len(accuracies)
@@ -113,7 +112,7 @@ def eval(model, test_dataset, eval_samples=None, **params):
     model.train()
     return metrics
 
-def train_classifier(dataset=None, **params):
+def train_classifier(args, dataset=None):
     save_dir = f'./models/classifier/{wandb.run.name}'
     os.makedirs(save_dir, exist_ok=True)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -131,33 +130,11 @@ def train_classifier(dataset=None, **params):
                                                                output_hidden_states=False)
     model.to(device)
     
-    model = train(model, train_data, test_data, **params)
-    print(f'Saving model to {save_dir}')
-    model.save_pretrained(save_dir)
+    model = train(model, train_data, test_data, args)
+    if not args.debug:
+        print(f'Saving model to {save_dir}')
+        model.save_pretrained(save_dir)
     return model
 
-if __name__ == '__main__':
-    params = {
-        'batch_size': 32,
-        'lr': 2e-5,
-        'epochs': 4,
-        'seed': 42,
-    }
-
-    wandb.init(
-        entity='nlp-reasoning',
-        project='sarcasm_detection',
-        notes="",
-        config=params,
-    )
-
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-    random.seed(params['seed'])
-    np.random.seed(params['seed'])
-    torch.manual_seed(params['seed'])
-    torch.cuda.manual_seed_all(params['seed'])
-
-    train_classifier(**params)
 
 
