@@ -47,6 +47,8 @@ def load_data(file, train_test_split=0.8) -> Tuple[TensorDataset, TensorDataset]
     data = list(parse_data(file))
     dataset_size = len(data)
     print(f'{dataset_size} samples loaded')
+    positive = sum(sample['is_sarcastic'] for sample in data)
+    print(f'{positive/dataset_size*100:.1f}% sarcastic samples')
     train_size = int(dataset_size*train_test_split)
     test_size = dataset_size - train_size
     print('Tokenizing data...')
@@ -112,12 +114,13 @@ def train(model, train_dataset, test_dataset, **params):
                 print(stop)
                 eval_metrics = eval(model, test_dataset, **params)
                 print(eval_metrics)
-                return
+                return model
 
         avg_train_loss = total_train_loss / len(dataloader)
         print(f'Epoch {epoch}\t\tAvg Training Loss: {avg_train_loss:.3f}')
         eval_metrics = eval(model, test_dataset, **params)
         print(eval_metrics)
+    return model
 
 
 def eval(model, test_dataset, eval_samples=None, **params):
@@ -160,6 +163,28 @@ def eval(model, test_dataset, eval_samples=None, **params):
     model.train()
     return metrics
 
+def train_classifier(dataset=None, **params):
+    save_dir = f'./models/classifier/{wandb.run.name}'
+    os.makedirs(save_dir, exist_ok=True)
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+    if not dataset:
+        train_data, test_data = load_data('data/Sarcasm_Headlines_Dataset_v2.json')
+    else:
+        pass
+
+    print('Loading Pretrained Model...')
+    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased",
+                                                               num_labels=2,
+                                                               output_attentions=False,
+                                                               output_hidden_states=False)
+    model.to(device)
+    
+    model = train(model, train_data, test_data, **params)
+    print(f'Saving model to {save_dir}')
+    model.save_pretrained(save_dir)
+    return model
+
 if __name__ == '__main__':
     params = {
         'batch_size': 32,
@@ -182,15 +207,6 @@ if __name__ == '__main__':
     torch.manual_seed(params['seed'])
     torch.cuda.manual_seed_all(params['seed'])
 
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    train_classifier(**params)
 
-    train_data, test_data = load_data('data/Sarcasm_Headlines_Dataset_v2.json')
-
-    model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased",
-                                                               num_labels=2,
-                                                               output_attentions=False,
-                                                               output_hidden_states=False)
-    model.to(device)
-    
-    train(model, train_data, test_data, **params)
 
