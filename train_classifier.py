@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import AutoModelForSequenceClassification, AdamW
 import wandb
 
-from load_dataset import load_data
+from dataset import Dataset
 
 def train(model, train_dataset, test_dataset, **params):
     dataloader = DataLoader(train_dataset,
@@ -73,7 +73,6 @@ def train(model, train_dataset, test_dataset, **params):
         print(eval_metrics)
     return model
 
-
 def eval(model, test_dataset, eval_samples=None, **params):
     sampler = RandomSampler if eval_samples is not None else SequentialSampler
     dataloader = DataLoader(test_dataset,
@@ -120,9 +119,10 @@ def train_classifier(dataset=None, **params):
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     if not dataset:
-        train_data, test_data = load_data('data/Sarcasm_Headlines_Dataset_v2.json')
-    else:
-        pass
+        dataset = Dataset('data/Sarcasm_Headlines_Dataset_v2.json')
+    train_data, test_data = dataset.train_test_split(0.8)
+    train_data = train_data.to_tokenized_tensors(model='classifier')
+    test_data = test_data.to_tokenized_tensors(model='classifier')
 
     print('Loading Pretrained Model...')
     model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased",
