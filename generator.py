@@ -6,25 +6,27 @@ from typing import Dict, List
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler
-from transformers import GPTNeoForCausalLM, AdamW, AutoTokenizer
+from transformers import GPTNeoForCausalLM, GPT2Tokenizer, AdamW, AutoTokenizer
 import wandb
 
 from dataset import ReasoningSample, ReplayBuffer
-from models import Model
-
+from model import Model
 
 class Tokenizer:
     def __init__(self):
-        self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+        self.tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-neo-1.3B")
 
     def encode(self, sample:Dict) -> Dict:
-        output = self.generator_tokenizer.encode_plus(sample['headline'],
-                                        add_special_tokens = True,
-                                        max_length = 200,
-                                        padding='max_length',
-                                        truncation=True,
-                                        return_attention_mask=True,
-                                        return_tensors = 'pt') 
+        prompt = sample['prompt']
+        response = sample['response']
+        output = self.tokenizer.encode_plus(text=prompt,
+                                            text_pair=response,
+                                            add_special_tokens = True,
+                                            max_length = 400,
+                                            padding='max_length',
+                                            truncation=True,
+                                            return_attention_mask=True,
+                                            return_tensors = 'pt') 
         return output
 
 

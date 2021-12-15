@@ -37,9 +37,10 @@ class Dataset:
 class ClassifierDataset(Dataset):
     def _load_dataset(self, dataset_name):
         if dataset_name  == 'sarcasm_headlines':
-            data = list(parse_data('data/Sarcasm_Headlines_Dataset_v2.json'))
-            positive = sum(sample['is_sarcastic'] for sample in self.data)
-            print(f'{positive/len(self)*100:.1f}% sarcastic samples')
+            data = [{'text': sample['headline'], 'label': sample['is_sarcastic']}
+                    for sample in parse_data('data/Sarcasm_Headlines_Dataset_v2.json')]
+            positive = sum(sample['label'] for sample in data)
+            print(f'{positive/len(data)*100:.1f}% sarcastic samples')
         else:
             raise ValueError
         return data
@@ -55,7 +56,7 @@ class ClassifierDataset(Dataset):
             encoded_dict = tokenizer.encode(sample)
             input_ids.append(encoded_dict['input_ids'])
             attention_masks.append(encoded_dict['attention_mask'])
-            labels.append(sample['is_sarcastic'])
+            labels.append(sample['label'])
 
         input_ids = torch.cat(input_ids, dim=0)
         attention_masks = torch.cat(attention_masks, dim=0)

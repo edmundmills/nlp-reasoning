@@ -16,13 +16,13 @@ class Tokenizer:
         self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
 
     def encode(self, sample:Dict) -> Dict:
-        output = self.generator_tokenizer.encode_plus(sample['headline'],
-                                        add_special_tokens = True,
-                                        max_length = 200,
-                                        padding='max_length',
-                                        truncation=True,
-                                        return_attention_mask=True,
-                                        return_tensors = 'pt') 
+        output = self.generator_tokenizer.encode_plus(sample['text'],
+                                                      add_special_tokens = True,
+                                                      max_length = 200,
+                                                      padding='max_length',
+                                                      truncation=True,
+                                                      return_attention_mask=True,
+                                                      return_tensors = 'pt') 
         return output
 
 class Classifier(Model):
