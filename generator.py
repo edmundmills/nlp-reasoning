@@ -29,18 +29,30 @@ class Tokenizer:
                                             return_tensors = 'pt') 
         return output
 
+    def __call__(self, *args, **kwargs):
+        return self.tokenizer(*args, **kwargs)
+    
+    def batch_decode(self, *args, **kwargs):
+        return self.batch_decode(*args, **kwargs)
+
 
 class Generator(Model):
     def __init__(self) -> None:
         super().__init__()
         self.model_class = GPTNeoForCausalLM
         print('Loading Pretrained Model...')
-        self.model = self.model_class.from_pretrained()
+        self.model = self.model_class.from_pretrained("EleutherAI/gpt-neo-1.3B")
         self.model.to(self.device)
         self.tokenizer = Tokenizer()
 
-    def generate(prompts:List[str]):
-        pass
+    def generate(self, prompts:List[str]) -> List[str]:
+        responses = []
+        for prompt in prompts:
+            input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
+            gen_tokens = self.model.generate(input_ids)
+            gen_text = self.tokenizer.batch_decode(gen_tokens)[0]
+            responses.append(gen_text)
+        return responses
 
     def fine_tune(self, dataset, args):
         if not args.debug:

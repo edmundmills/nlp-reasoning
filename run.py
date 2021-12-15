@@ -11,6 +11,7 @@ import wandb
 
 
 from classifier import Classifier
+from generator import Generator
 from dataset import ClassifierDataset, GeneratorDataset
 # from train_generator import train_generator
 
@@ -62,12 +63,19 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
+    dataset = ClassifierDataset('sarcasm_headlines')
     classifier = Classifier()
     if args.classifier == 'pretrain':
         pretrain_args = args.classifier
         with wandb_run(pretrain_args):
-            dataset = ClassifierDataset('sarcasm_headlines')
             classifier.fine_tune(dataset, pretrain_args)
     else:
         classifier.load()
+
+    generator = Generator()
+    headlines = [dataset[idx]['text'] for idx in range(20)]
+    responses = generator.generate(headlines)
+    print(zip(headlines, responses))
+
+
 
