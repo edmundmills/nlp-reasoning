@@ -1,5 +1,4 @@
 from collections import deque
-import os
 from pathlib import Path
 
 import numpy as np
@@ -8,40 +7,13 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import BertForSequenceClassification, AdamW
 import wandb
 
-class eval_mode:
-    def __init__(self, model) -> None:
-        self.model = model
+from model import Model
 
-    def __enter__(self):
-        self.model.eval()
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.model.train()
-
-
-class Classifier:
+class Classifier(Model):
     def __init__(self):
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        super().__init__()
         self.model_class = BertForSequenceClassification
         self.model = None
-
-    def save(self):
-        print(f'Saving model to {self.model_dir}')
-        self.model_dir.mkdir(exist_ok=True)
-        self.model.save_pretrained(self.model_dir)
-        print(f'Model Saved.')
-
-    def load(self, model_dir=None):
-        if model_dir:
-            self.model_dir = Path(model_dir)
-        else:
-            classifiers = Path('models/classifier')
-            classifier_dirs = [dir for dir in classifiers.iterdir() if dir.is_dir()]
-            classifier_dirs = sorted(classifier_dirs, key=lambda t: -os.stat(t).st_mtime)
-            self.model_dir = classifier_dirs[0]
-        print(f'Loading classifier from {str(self.model_dir)}')
-        self.model = self.model_class.from_pretrained(self.model_dir)
-        self.model.to(self.device)
 
     def fine_tune(self, dataset, args):
         if not args.debug:
@@ -127,7 +99,7 @@ class Classifier:
             print(eval_metrics)
 
     def eval(self, test_dataset, args, eval_samples=None):
-        with eval_mode(self.model):
+        with Model.eval_mode(self.model):
             sampler = RandomSampler if eval_samples is not None else SequentialSampler
             dataloader = DataLoader(test_dataset,
                                     batch_size=args.classifier_training_batch_size,
