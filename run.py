@@ -72,9 +72,9 @@ if __name__ == '__main__':
         classifier.load()
 
     generator = Generator()
-    headlines = [dataset[idx]['text'] for idx in range(20)]
+    headlines = [dataset[idx]['text'] for idx in range(10)]
     responses = generator.generate(headlines)
-    print(zip(headlines, responses))
+    print(responses)
 
 
 

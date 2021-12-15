@@ -33,7 +33,7 @@ class Tokenizer:
         return self.tokenizer(*args, **kwargs)
     
     def batch_decode(self, *args, **kwargs):
-        return self.batch_decode(*args, **kwargs)
+        return self.tokenizer.batch_decode(*args, **kwargs)
 
 
 class Generator(Model):
@@ -49,7 +49,7 @@ class Generator(Model):
         responses = []
         for prompt in prompts:
             input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
-            gen_tokens = self.model.generate(input_ids)
+            gen_tokens = self.model.generate(input_ids, do_sample=True, temperature=0.9, max_length=100)
             gen_text = self.tokenizer.batch_decode(gen_tokens)[0]
             responses.append(gen_text)
         return responses
