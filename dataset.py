@@ -7,17 +7,8 @@ import torch
 from torch.utils.data import TensorDataset
 from transformers import AutoTokenizer
 
-from utils import download_winning_args
+from data_utils import download_winning_args, parse_data, clean_text
 
-def parse_data(file):
-    for l in open(file,'r'):
-        yield json.loads(l)
-
-def clean_text(text):
-    if text:
-        return re.sub(r"(@\[A-Za-z0-9]+)|(\w+:\/\/\S+)|http.+?", "", text)
-    else:
-        return text
 
 class Dataset:
     def __init__(self, dataset_name=None):
