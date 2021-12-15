@@ -1,8 +1,7 @@
-import json
+from collections import deque, namedtuple
 import os
 from typing import Dict
 
-import re
 import torch
 from torch.utils.data import TensorDataset
 from transformers import AutoTokenizer
@@ -116,6 +115,15 @@ class GeneratorDataset(Dataset):
         print('Data tokenized.')
         return tensor_dataset
 
+ReasoningSample = namedtuple('ReasoningSample', ['prompt', 'response', 'label', 'score'])
+
+class ReplayBuffer:
+    def __init__(self, max_length=None):
+        self.buffer = deque(maxlen=max_length)
+    
+    def append(self, prompts, responses, labels, scores):
+        for sample in zip(prompts, responses, labels, scores):
+            self.buffer.append(ReasoningSample(sample))
 
 class Tokenizer:
     def __init__(self):
