@@ -7,9 +7,9 @@ import torch
 
 import wandb
 
-from train_classifier import train_classifier
+from classifier import Classifier
+from dataset import Dataset
 # from train_generator import train_generator
-from models import load_classifier
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -48,10 +48,11 @@ if __name__ == '__main__':
             notes="",
             config=args,
         )
-        classifier = train_classifier(args)
+        dataset = Dataset('sarcasm_headlines')
+        classifier = Classifier(dataset, args)
         wandb.finish()
     else:
-        classifier = load_classifier()
+        classifier = ClassifierDataset()
 
     # wandb.init(
     #     entity='nlp-reasoning',
