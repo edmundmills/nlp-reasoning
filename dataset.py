@@ -4,7 +4,6 @@ from typing import Dict
 
 import torch
 from torch.utils.data import TensorDataset
-from transformers import AutoTokenizer
 
 from data_utils import download_winning_args, parse_data, clean_text
 
@@ -18,7 +17,6 @@ class Dataset:
             print(f'{len(self)} samples loaded')
         else:
             self.data = None
-        self.tokenizer = Tokenizer()
 
     def __len__(self):
         return len(self.data)
@@ -46,7 +44,7 @@ class ClassifierDataset(Dataset):
             raise ValueError
         return data
 
-    def to_tokenized_tensors(self, model:str) -> TensorDataset:
+    def to_tokenized_tensors(self, tokenizer) -> TensorDataset:
         input_ids = []
         attention_masks = []
         labels = []
@@ -54,7 +52,7 @@ class ClassifierDataset(Dataset):
         print('Tokenizing data...')
 
         for sample in self.data:
-            encoded_dict = self.tokenizer.encode(sample, model)
+            encoded_dict = tokenizer.encode(sample)
             input_ids.append(encoded_dict['input_ids'])
             attention_masks.append(encoded_dict['attention_mask'])
             labels.append(sample['is_sarcastic'])
@@ -95,7 +93,7 @@ class GeneratorDataset(Dataset):
             raise ValueError
         return data
 
-    def to_tokenized_tensors(self, model:str) -> TensorDataset:
+    def to_tokenized_tensors(self, tokenizer) -> TensorDataset:
         input_ids = []
         attention_masks = []
         labels = []
@@ -103,7 +101,7 @@ class GeneratorDataset(Dataset):
         print('Tokenizing data...')
 
         for sample in self.data:
-            encoded_dict = self.tokenizer.encode(sample, model)
+            encoded_dict = tokenizer.encode(sample)
             input_ids.append(encoded_dict['input_ids'])
             attention_masks.append(encoded_dict['attention_mask'])
             labels.append(sample['is_sarcastic'])
@@ -125,30 +123,5 @@ class ReplayBuffer:
         for sample in zip(prompts, responses, labels, scores):
             self.buffer.append(ReasoningSample(sample))
 
-class Tokenizer:
-    def __init__(self):
-        self.generator_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
-        self.classifier_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
-
-    def encode(self, sample:Dict, model:str) -> Dict:
-        if model == 'generator':
-            output = self.generator_tokenizer.encode_plus(sample['headline'],
-                                            add_special_tokens = True,
-                                            max_length = 200,
-                                            padding='max_length',
-                                            truncation=True,
-                                            return_attention_mask=True,
-                                            return_tensors = 'pt') 
-        elif model == 'classifier':
-            output = self.generator_tokenizer.encode_plus(sample['headline'],
-                                            add_special_tokens = True,
-                                            max_length = 200,
-                                            padding='max_length',
-                                            truncation=True,
-                                            return_attention_mask=True,
-                                            return_tensors = 'pt') 
-        else:
-            raise ValueError
-        return output
 
 

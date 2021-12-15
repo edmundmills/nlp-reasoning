@@ -1,27 +1,44 @@
 from collections import deque
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
-from transformers import BertForSequenceClassification, AdamW
+from transformers import BertForSequenceClassification, AdamW, AutoTokenizer
 import wandb
 
 from model import Model
+
+
+class Tokenizer:
+    def __init__(self):
+        self.tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", do_lower_case=True)
+
+    def encode(self, sample:Dict) -> Dict:
+        output = self.generator_tokenizer.encode_plus(sample['headline'],
+                                        add_special_tokens = True,
+                                        max_length = 200,
+                                        padding='max_length',
+                                        truncation=True,
+                                        return_attention_mask=True,
+                                        return_tensors = 'pt') 
+        return output
 
 class Classifier(Model):
     def __init__(self):
         super().__init__()
         self.model_class = BertForSequenceClassification
         self.model = None
+        self.tokenizer = Tokenizer()
 
     def fine_tune(self, dataset, args):
         if not args.debug:
             self.model_dir = Path(f'models/classifier/{wandb.run.name}')
 
         train_data, test_data = dataset.train_test_split(0.8)
-        train_data = train_data.to_tokenized_tensors(model='classifier')
-        test_data = test_data.to_tokenized_tensors(model='classifier')
+        train_data = train_data.to_tokenized_tensors(tokenizer=self.tokenizer)
+        test_data = test_data.to_tokenized_tensors(tokenizer=self.tokenizer)
 
         if self.model is None:
             print('Loading Pretrained Model...')
