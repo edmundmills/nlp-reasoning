@@ -118,7 +118,7 @@ def train_classifier(args, dataset=None):
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     if not dataset:
-        dataset = Dataset('data/Sarcasm_Headlines_Dataset_v2.json')
+        dataset = Dataset('sarcasm_headlines')
     train_data, test_data = dataset.train_test_split(0.8)
     train_data = train_data.to_tokenized_tensors(model='classifier')
     test_data = test_data.to_tokenized_tensors(model='classifier')

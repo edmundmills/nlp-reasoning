@@ -1,25 +1,65 @@
 import json
+import os
 from typing import Dict
 
+import re
 import torch
 from torch.utils.data import TensorDataset
 from transformers import AutoTokenizer
+
+from utils import download_winning_args
 
 def parse_data(file):
     for l in open(file,'r'):
         yield json.loads(l)
 
+def clean_text(text):
+    if text:
+        return re.sub(r"(@\[A-Za-z0-9]+)|(\w+:\/\/\S+)|http.+?", "", text)
+    else:
+        return text
+
 class Dataset:
-    def __init__(self, file=None):
-        if file:
+    def __init__(self, dataset=None):
+        self.dataset = dataset
+        if dataset is not None:
             print('Loading Data...')
-            self.data = list(parse_data(file))
+            self.data = self._load_dataset(dataset)
             print(f'{len(self)} samples loaded')
-            positive = sum(sample['is_sarcastic'] for sample in self.data)
-            print(f'{positive/len(self)*100:.1f}% sarcastic samples')
         else:
             self.data = None
         self.tokenizer = Tokenizer()
+
+    def _load_dataset(self, dataset):
+        if dataset  == 'sarcasm_headlines':
+            data = list(parse_data('data/Sarcasm_Headlines_Dataset_v2.json'))
+            positive = sum(sample['is_sarcastic'] for sample in self.data)
+            print(f'{positive/len(self)*100:.1f}% sarcastic samples')
+        elif dataset == 'winning_arguments':
+            data_dict = {}
+            data = []
+            print('Building reply lookup dict...')
+            if not os.path.isdir('data/winning-args-corpus'):
+                download_winning_args()
+            for row in parse_data('data/winning-args-corpus/utterances.json'):
+                text = clean_text(row['text'])
+                if text and len(text) > 25 and len(text) < 500:
+                    data_dict[row['id']] = text
+            print('Building dataset...')
+            for row in parse_data('data/winning-args-corpus/utterances.json'):
+                prompt_id = row['reply-to']
+                prompt = data_dict.get(prompt_id, None)
+                response = data_dict.get(row['id'], None)
+                success = row['meta']['success']
+                score = row['meta']['score'] or 0
+                if (success or score >= 5) and prompt and response:
+                    data.append({
+                        'prompt': prompt,
+                        'response': response,
+                    })
+        else:
+            raise ValueError
+        return data
 
     def __len__(self):
         return len(self.data)
