@@ -10,10 +10,9 @@ import torch
 import wandb
 
 
-from classifier import Classifier
-from generator import Generator
-from dataset import ClassifierDataset, GeneratorDataset
-# from train_generator import train_generator
+from nlp_reasoning.classifier import Classifier
+from nlp_reasoning.generator import Generator
+from nlp_reasoning.dataset import ClassifierDataset, GeneratorDataset
 
 def parse_args():
     parser = argparse.ArgumentParser()

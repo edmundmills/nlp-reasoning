@@ -5,7 +5,7 @@ from typing import Dict
 import torch
 from torch.utils.data import TensorDataset
 
-from data_utils import download_winning_args, parse_data, clean_text
+from nlp_reasoning.data_utils import download_winning_args, parse_data, clean_text
 
 
 class Dataset:

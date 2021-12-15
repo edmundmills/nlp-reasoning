@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import BertForSequenceClassification, AdamW, AutoTokenizer
 import wandb
 
-from model import Model
+from nlp_reasoning.model import Model
 
 
 class Tokenizer:

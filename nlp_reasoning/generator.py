@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader, RandomSampler
 from transformers import GPTNeoForCausalLM, GPT2Tokenizer, AdamW, AutoTokenizer
 import wandb
 
-from dataset import ReasoningSample, ReplayBuffer
-from model import Model
+from nlp_reasoning.dataset import ReasoningSample, ReplayBuffer
+from nlp_reasoning.model import Model
 
 class Tokenizer:
     def __init__(self):
