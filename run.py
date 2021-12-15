@@ -2,65 +2,72 @@ import argparse
 import os
 import random
 
+from hydra import compose, initialize
+from flatten_dict import flatten
 import numpy as np
+from omegaconf import OmegaConf
 import torch
-
 import wandb
 
+
 from classifier import Classifier
-from dataset import Dataset
+from dataset import ClassifierDataset, GeneratorDataset
 # from train_generator import train_generator
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', dest='debug',
-                        action='store_true', default=False)
-    parser.add_argument('--train-classifier', dest='train_classifier',
-                        action='store_true', default=False)
+    parser.add_argument("overrides", nargs="*", default=[])
     args = parser.parse_args()
-    if args.train_classifier:
-        args.classifier_training_batch_size = 32
-        args.classifier_training_lr = 2e-5
-        args.classifier_training_epochs = 4
-
-    args.seed = 42
-    args.train_steps = 1e5
-    args.generator_batch_size = 4
-    args.generator_lr = 2e-5
-    args.classifier_batch_size = 32
-    print(args)
     return args
+
+def get_config(args):
+    with initialize(config_path='./config'):
+        cfg = compose('config.yaml', overrides=args.overrides)
+
+    cfg.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    cfg.classifier.debug = cfg.debug
+    cfg.generator.debug = cfg.debug
+    cfg.reasoner.debug = cfg.debug
+    print(OmegaConf.to_yaml(cfg))        
+    return cfg
+
+def flatten_args(args):
+    return flatten(OmegaConf.to_container(args, resolve=True), reducer='dot')
+
+class wandb_run:
+    def __init__(self, args):
+        self.args = args
+
+    def __enter__(self):
+        if args.wandb:
+            wandb.init(
+                entity='nlp-reasoning',
+                project=args.project_name,
+                notes="",
+                config=flatten_args(self.args),
+            )
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        if args.wandb:
+            wandb.finish()
+
 
 if __name__ == '__main__':
     args = parse_args()
-    
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    args = get_config(args)
 
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
 
-    if args.train_classifier:
-        wandb.init(
-            entity='nlp-reasoning',
-            project='train_classifier',
-            notes="",
-            config=args,
-        )
-        dataset = Dataset('sarcasm_headlines')
-        classifier = Classifier(dataset, args)
-        wandb.finish()
+    classifier = Classifier()
+    if args.classifier == 'pretrain':
+        pretrain_args = args.classifier
+        with wandb_run(pretrain_args):
+            dataset = ClassifierDataset('sarcasm_headlines')
+            classifier.fine_tune(dataset, pretrain_args)
     else:
-        classifier = ClassifierDataset()
+        classifier.load()
 
-    # wandb.init(
-    #     entity='nlp-reasoning',
-    #     project='train_generator',
-    #     notes="",
-    #     config=args,
-    # )
-
-    # generator = train_generator(classifier, args)
-    
-    # wandb.finish()

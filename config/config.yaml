@@ -1,0 +1,9 @@
+defaults:
+  - _self_
+  - classifier: load_pretrained
+  - generator: load_pretrained
+  - reasoner: train
+
+seed: 42
+debug: false
+device: ???

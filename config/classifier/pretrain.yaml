@@ -1,0 +1,7 @@
+project_name: pretrain_classifier
+
+batch_size: 32
+lr: 2e-5
+epochs: 4
+
+debug: ???
