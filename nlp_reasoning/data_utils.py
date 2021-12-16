@@ -20,3 +20,9 @@ def clean_text(text):
         return re.sub(r"(@\[A-Za-z0-9]+)|(\w+:\/\/\S+)|http.+?", "", text)
     else:
         return text
+
+def trim_trailing_sentence(text):
+    text = '.'.join(text.split('.')[:-1])
+    if text:
+        text += '.'
+    return text

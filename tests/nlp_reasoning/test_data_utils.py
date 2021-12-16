@@ -21,3 +21,21 @@ class TestCleanText:
         text = 'Test Text: '
         url = 'https://www.google.com'
         assert(clean_text(text + url) == text)
+
+class TestTrimTrailingSentence:
+    def test_empty_string(self):
+        text = ''
+        assert(trim_trailing_sentence(text) == text)
+
+    def test_no_trail(self):
+        text = 'A full sentence.'
+        assert(trim_trailing_sentence(text) == text)
+    
+    def test_two_sentences(self):
+        text = 'A full sentence. Another.'
+        assert(trim_trailing_sentence(text) == text)
+    
+    def test_trail(self):
+        text = 'A full sentence.'
+        trail = ' A trail'
+        assert(trim_trailing_sentence(text + trail) == text)
