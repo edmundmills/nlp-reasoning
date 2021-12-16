@@ -41,7 +41,7 @@ class Classifier(Model):
         test_data = test_data.to_tokenized_tensors(tokenizer=self.tokenizer)
 
         if self.model is None:
-            print('Loading Pretrained Model...')
+            print(f'Loading Pretrained Classifier Model ({self.model_class.__name__})...')
             self.model = self.model_class.from_pretrained("bert-base-uncased",
                                                           num_labels=2,
                                                           output_attentions=False,

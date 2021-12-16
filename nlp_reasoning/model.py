@@ -17,11 +17,12 @@ class Model:
         if model_dir:
             self.model_dir = Path(model_dir)
         else:
-            models = Path(f'models/{self.__class__.__name__}')
-            model_dirs = [dir for dir in models.iterdir() if dir.is_dir()]
+            models = Path(f'models/{self.__class__.__name__.lower()}')
+            model_dirs = [dir for dir in models.iterdir() if dir.is_dir()
+                          and dir / 'config.json' in list(dir.iterdir())]
             model_dirs = sorted(model_dirs, key=lambda t: -os.stat(t).st_mtime)
             self.model_dir = model_dirs[0]
-        print(f'Loading classifier from {str(self.model_dir)}')
+        print(f'Loading {self.model_class.__name__} as classifier from {str(self.model_dir)}')
         self.model = self.model_class.from_pretrained(self.model_dir)
         self.model.to(self.device)
 

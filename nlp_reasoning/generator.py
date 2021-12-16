@@ -40,7 +40,7 @@ class Generator(Model):
     def __init__(self) -> None:
         super().__init__()
         self.model_class = GPTNeoForCausalLM
-        print('Loading Pretrained Model...')
+        print(f'Loading Pretrained Generator Model ({self.model_class.__name__})...')
         self.model = self.model_class.from_pretrained("EleutherAI/gpt-neo-1.3B")
         self.model.to(self.device)
         self.tokenizer = Tokenizer()

@@ -12,7 +12,7 @@ class Dataset:
     def __init__(self, dataset_name=None):
         self.dataset_name = dataset_name
         if dataset_name is not None:
-            print('Loading Data...')
+            print(f'Loading {dataset_name} data...')
             self.data = self._load_dataset(dataset_name)
             print(f'{len(self)} samples loaded')
         else:
