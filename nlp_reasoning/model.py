@@ -9,7 +9,7 @@ class Model:
 
     def save(self):
         print(f'Saving model to {self.model_dir}')
-        self.model_dir.mkdir(exist_ok=True)
+        self.model_dir.mkdir(parents=True, exist_ok=True)
         self.model.save_pretrained(self.model_dir)
         print(f'Model Saved.')
 

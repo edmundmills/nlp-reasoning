@@ -1,6 +1,7 @@
 from collections import deque
 import itertools
 import os
+from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
@@ -64,7 +65,7 @@ class Generator(Model):
 
     def fine_tune(self, dataset, args):
         if not args.debug:
-            self.model_dir = f'./models/generator/{wandb.run.name}'
+            self.model_dir = Path(f'./models/generator/{wandb.run.name}')
 
         train_data, test_data = dataset.train_test_split(0.8)
         train_data = train_data.to_tokenized_tensors(tokenizer=self.tokenizer)
