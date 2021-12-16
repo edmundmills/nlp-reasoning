@@ -10,7 +10,7 @@ from transformers import GPTNeoForCausalLM, GPT2Tokenizer, Adafactor, AutoTokeni
 import wandb
 
 from nlp_reasoning.dataset import ReasoningSample, ReplayBuffer
-from nlp_reasoning.data_utils import trim_trailing_sentence
+from nlp_reasoning.data_utils import trim_trailing_sentence, remove_linebreaks
 from nlp_reasoning.model import Model
 
 class Tokenizer:
@@ -58,6 +58,7 @@ class Generator(Model):
                 gen_tokens = self.model.generate(input_ids, do_sample=True, temperature=0.9, min_length=40, max_length=60)
                 gen_text = self.tokenizer.batch_decode(gen_tokens.cpu())[0]
                 gen_text = trim_trailing_sentence(gen_text)
+                gen_text = remove_linebreaks(gen_text)
                 responses.append(gen_text)
         return responses
 

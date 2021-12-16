@@ -29,3 +29,6 @@ def trim_trailing_sentence(text):
     if text:
         text += '.'
     return text
+
+def remove_linebreaks(text):
+    return text.replace('\n', ' ')
