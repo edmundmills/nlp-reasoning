@@ -5,7 +5,7 @@ from typing import Dict
 import torch
 from torch.utils.data import TensorDataset
 
-from nlp_reasoning.data_utils import download_winning_args, parse_data, clean_text
+from nlp_reasoning.data_utils import download_winning_args, parse_data, clean_text, clean_headline
 
 
 class Dataset:
@@ -37,7 +37,7 @@ class Dataset:
 class ClassifierDataset(Dataset):
     def _load_dataset(self, dataset_name):
         if dataset_name  == 'sarcasm_headlines':
-            data = [{'text': sample['headline'], 'label': sample['is_sarcastic']}
+            data = [{'text': clean_headline(sample['headline']), 'label': sample['is_sarcastic']}
                     for sample in parse_data('data/Sarcasm_Headlines_Dataset_v2.json')]
             positive = sum(sample['label'] for sample in data)
             print(f'{positive/len(data)*100:.1f}% sarcastic samples')
@@ -76,7 +76,7 @@ class GeneratorDataset(Dataset):
                 download_winning_args()
             for row in parse_data('data/winning-args-corpus/utterances.json'):
                 text = clean_text(row['text'])
-                if text and len(text) > 25 and len(text) < 500:
+                if text and len(text) > 25 and len(text) < 400:
                     data_dict[row['id']] = text
             print('Building dataset...')
             for row in parse_data('data/winning-args-corpus/utterances.json'):
@@ -97,7 +97,6 @@ class GeneratorDataset(Dataset):
     def to_tokenized_tensors(self, tokenizer) -> TensorDataset:
         input_ids = []
         attention_masks = []
-        labels = []
 
         print('Tokenizing data...')
 
@@ -105,12 +104,10 @@ class GeneratorDataset(Dataset):
             encoded_dict = tokenizer.encode(sample)
             input_ids.append(encoded_dict['input_ids'])
             attention_masks.append(encoded_dict['attention_mask'])
-            labels.append(sample['is_sarcastic'])
 
         input_ids = torch.cat(input_ids, dim=0)
         attention_masks = torch.cat(attention_masks, dim=0)
-        labels = torch.tensor(labels)
-        tensor_dataset = TensorDataset(input_ids, attention_masks, labels)
+        tensor_dataset = TensorDataset(input_ids, attention_masks)
         print('Data tokenized.')
         return tensor_dataset
 

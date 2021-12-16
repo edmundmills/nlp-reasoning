@@ -1,6 +1,8 @@
-project_name: pretrain_generator
+name: pretrain_generator
 
-
-
+batch_size: 1
+gradient_accumulation: 32
+lr: 5e-5
+epochs: 1
 
 debug: ???

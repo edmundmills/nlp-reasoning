@@ -20,7 +20,7 @@ class Tokenizer:
                                                       add_special_tokens = True,
                                                       max_length = 200,
                                                       padding='max_length',
-                                                      truncation=True,
+                                                      truncation='only_second',
                                                       return_attention_mask=True,
                                                       return_tensors = 'pt') 
         return output

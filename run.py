@@ -7,6 +7,7 @@ from flatten_dict import flatten
 import numpy as np
 from omegaconf import OmegaConf
 import torch
+import transformers
 import wandb
 
 
@@ -39,16 +40,16 @@ class wandb_run:
         self.args = args
 
     def __enter__(self):
-        if args.wandb:
+        if not self.args.debug:
             wandb.init(
                 entity='nlp-reasoning',
-                project=args.project_name,
+                project=self.args.name,
                 notes="",
                 config=flatten_args(self.args),
             )
 
     def __exit__(self, exc_type, exc_value, exc_tb):
-        if args.wandb:
+        if not self.args.debug:
             wandb.finish()
 
 
@@ -57,6 +58,8 @@ if __name__ == '__main__':
     args = get_config(args)
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    transformers.logging.set_verbosity_error()
+    
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -64,7 +67,7 @@ if __name__ == '__main__':
 
     dataset = ClassifierDataset('sarcasm_headlines')
     classifier = Classifier()
-    if args.classifier == 'pretrain':
+    if args.classifier.name == 'pretrain_classifier':
         pretrain_args = args.classifier
         with wandb_run(pretrain_args):
             classifier.fine_tune(dataset, pretrain_args)
@@ -72,6 +75,12 @@ if __name__ == '__main__':
         classifier.load()
 
     generator = Generator()
+    if args.generator.name == 'pretrain_generator':
+        generator_dataset = GeneratorDataset('winning_arguments')
+        pretrain_args = args.generator
+        with wandb_run(pretrain_args):
+            generator.fine_tune(generator_dataset, pretrain_args)
+
     headlines = [dataset[idx]['text'] for idx in range(10)]
     responses = generator.generate(headlines)
     for response in responses:
