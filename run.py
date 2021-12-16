@@ -74,7 +74,7 @@ if __name__ == '__main__':
     generator = Generator()
     headlines = [dataset[idx]['text'] for idx in range(10)]
     responses = generator.generate(headlines)
-    print(responses)
-
+    for response in responses:
+        print(response)
 
 

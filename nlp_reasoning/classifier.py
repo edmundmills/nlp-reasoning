@@ -46,7 +46,7 @@ class Classifier(Model):
                                                           num_labels=2,
                                                           output_attentions=False,
                                                           output_hidden_states=False)
-        self.model.to(self.device)
+        self.model = self.model.to(self.device)
         
         model = self.train(train_data, test_data, args)
         if not args.debug:

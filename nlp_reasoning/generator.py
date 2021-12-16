@@ -10,6 +10,7 @@ from transformers import GPTNeoForCausalLM, GPT2Tokenizer, AdamW, AutoTokenizer
 import wandb
 
 from nlp_reasoning.dataset import ReasoningSample, ReplayBuffer
+from nlp_reasoning.data_utils import trim_trailing_sentence
 from nlp_reasoning.model import Model
 
 class Tokenizer:
@@ -42,16 +43,20 @@ class Generator(Model):
         self.model_class = GPTNeoForCausalLM
         print(f'Loading Pretrained Generator Model ({self.model_class.__name__})...')
         self.model = self.model_class.from_pretrained("EleutherAI/gpt-neo-1.3B")
-        self.model.to(self.device)
+        print('Model Loaded. Transfering to GPU...')
+        self.model = self.model.to(self.device)
+        print('Model transfered to GPU.')
         self.tokenizer = Tokenizer()
 
     def generate(self, prompts:List[str]) -> List[str]:
         responses = []
-        for prompt in prompts:
-            input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
-            gen_tokens = self.model.generate(input_ids, do_sample=True, temperature=0.9, max_length=100)
-            gen_text = self.tokenizer.batch_decode(gen_tokens)[0]
-            responses.append(gen_text)
+        with Model.eval_mode(self.model):
+            for prompt in prompts:
+                input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids.to(self.device)
+                gen_tokens = self.model.generate(input_ids, do_sample=True, temperature=0.9, min_length=40, max_length=60)
+                gen_text = self.tokenizer.batch_decode(gen_tokens.cpu())[0]
+                gen_text = trim_trailing_sentence(gen_text)
+                responses.append(gen_text)
         return responses
 
     def fine_tune(self, dataset, args):
